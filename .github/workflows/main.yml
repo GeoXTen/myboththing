@@ -1,0 +1,49 @@
+# This is the name you'll see in the "Actions" tab.
+name: VRChat Booth Checker
+
+# This tells GitHub WHEN to run the script.
+on:
+  schedule:
+    # This is a special code that means "run every 15 minutes".
+    - cron: '*/15 * * * *'
+  # This lets you run it manually by clicking a button.
+  workflow_dispatch:
+
+# This section defines the actual work to be done.
+jobs:
+  check-and-notify:
+    # It tells GitHub to use a standard virtual computer running Linux.
+    runs-on: ubuntu-latest
+
+    # These are the step-by-step instructions for the computer.
+    steps:
+      # 1. Download your code from the repository.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Install the Python language.
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # 3. Install the extra tools the Python script needs.
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4
+
+      # 4. Finally, run your Python script!
+      #    It securely gets the webhook URL you saved in the Settings.
+      - name: Run VRChat Booth Bot
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python vrchat_bot.py
+
+      # 5. Save the 'last_item.txt' file so it doesn't post duplicates.
+      - name: Commit state file
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add last_item.txt
+          git commit -m "Update last seen item ID" || echo "No changes to commit"
+          git push
